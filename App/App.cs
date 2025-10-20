@@ -1,5 +1,4 @@
-#:package sly@3.7.6
-
+﻿
 using sly.lexer;
 using sly.parser.generator;
 using sly.parser.parser;
@@ -22,36 +21,41 @@ using sly.parser.parser;
     }
 
 [ParserRoot("root")]
+[AutoCloseIndentations]
     public class P
     {
         [Production("root : instr +")]
-        public object root_instr_(List<object> p0)
+        public string Root(List<string> instructions)
         {
-            return default(object);
+            return string.Join(Environment.NewLine, instructions);
         }
 
-        [Production("instr : ID SET INT")]
-        public object instr_ID_SET_INT(Token<L> p0, Token<L> p1, Token<L> p2)
+        [Production("instr : ID SET[d] INT")]
+        public string Assign(Token<L> id, Token<L> value)
         {
-            return default(object);
+	        return $"{id.Value} <- {value.Value}";
         }
 
-        [Production("instr : IF ID EQ INT blk else?")]
-        public object instr_IF_ID_EQ_INT_blk_else_(Token<L> p0, Token<L> p1, Token<L> p2, Token<L> p3, object p4, ValueOption<object> p5)
+        [Production("instr : IF[d] ID EQ[d] INT blk else?")]
+        public string IfThenElse(Token<L> id, Token<L> value, string thenBlock, ValueOption<string> elseBlock)
         {
-            return default(object);
+	        return $@"if ({id.Value} == {value.Value}) {{
+	{thenBlock}
+}} {elseBlock.Match(x => x, () => "")}";
         }
 
-        [Production("else : ELSE blk")]
-        public object else_ELSE_blk(Token<L> p0, object p1)
+        [Production("else : ELSE[d] blk")]
+        public string Else(string block)
         {
-            return default(object);
+	        return $@"else {{
+	{block}
+}}";
         }
 
-        [Production("blk : INDENT instr + UINDENT")]
-        public object blk_INDENT_instr_UINDENT(Token<L> p0, List<object> p1, Token<L> p2)
+        [Production("blk : INDENT[d] instr + UINDENT[d]")]
+        public string Block(List<string> instructions)
         {
-            return default(object);
+            return string.Join(Environment.NewLine, instructions);
         }
     }
 
@@ -63,25 +67,17 @@ public class App
 	{
 
 
-		var source = @"
-if a == 1
-	a = 2
-	if b == 2
-		b = 3
-		if c == 42
-			c=28
-		else
-			c =58 ";
 
-		source = @"
-a = 1
+
+		var source = @"
 if a == 1
 	a = 2
 else
 	a = 3";
+		
             
 		var instance = new P();
-		ParserBuilder<L,object> parserBuilder = new ParserBuilder<L,object>();
+		ParserBuilder<L,string> parserBuilder = new ParserBuilder<L,string>();
 		var parserBuild = parserBuilder.BuildParser(instance, ParserType.EBNF_LL_RECURSIVE_DESCENT, "root");
 		if (parserBuild.IsError)
 		{
@@ -109,7 +105,7 @@ else
 			return;
 		}
 Console.WriteLine("========================== PARSE SUCCESS ==========================");
-		Console.WriteLine($"😁");
+		Console.WriteLine(parsed.Result);
 Console.WriteLine("===================================================================");
 	}
 }
