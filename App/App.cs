@@ -1,7 +1,29 @@
 ﻿
+using System.Text;
 using sly.lexer;
 using sly.parser.generator;
 using sly.parser.parser;
+
+
+public static class E
+{
+	public static IEnumerable<string> GetLines(this string s)
+	{
+		StringReader sr = new StringReader(s);
+		string line;
+		while ((line = sr.ReadLine()) != null)
+			yield return line;
+	}
+
+	public static string Tab(this string s)
+	{
+		var lines = s.GetLines();
+		var builder = new StringBuilder();
+		foreach (var line in lines)
+			builder.AppendLine("\t"+line);
+		return builder.ToString();
+	}
+}
 
 [Lexer(IndentationAWare = true)]
     public enum L
@@ -40,16 +62,14 @@ using sly.parser.parser;
         public string IfThenElse(Token<L> id, Token<L> value, string thenBlock, ValueOption<string> elseBlock)
         {
 	        return $@"if ({id.Value} == {value.Value}) {{
-	{thenBlock}
-}} {elseBlock.Match(x => x, () => "")}";
+{thenBlock.Tab()}}} {elseBlock.Match(x => x, () => "")}";
         }
 
         [Production("else : ELSE[d] blk")]
         public string Else(string block)
         {
 	        return $@"else {{
-	{block}
-}}";
+{block.Tab()}}}";
         }
 
         [Production("blk : INDENT[d] instr + UINDENT[d]")]
@@ -73,7 +93,11 @@ public class App
 if a == 1
 	a = 2
 else
-	a = 3";
+	a = 3
+	if b == 12
+		c = 78
+	else 
+		c = 552";
 		
             
 		var instance = new P();
